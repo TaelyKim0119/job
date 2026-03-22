@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
+import '../services/api_service.dart';
+import '../models/analysis_result.dart';
 import 'result_screen.dart';
 
 class AnalyzingScreen extends StatefulWidget {
@@ -27,6 +29,9 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
 
   int _currentStage = 0;
   int _funFactIndex = 0;
+  AnalysisResult? _apiResult;
+  String? _apiError;
+  bool _apiDone = false;
 
   final List<_Stage> _stages = [
     _Stage('얼굴형 & 이마 분석 중...', '인내심과 리더십의 지표를 읽고 있어요', Icons.face),
@@ -70,17 +75,20 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
-    // Start analysis
+    // Start analysis animation
     _progressController.forward();
+
+    // Start actual API call
+    _callApi();
 
     // Cycle fun facts
     _cycleFunFacts();
 
-    // Navigate when done
+    // When animation completes, wait for API if needed
     _progressController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         HapticFeedback.heavyImpact();
-        _navigateToResult();
+        _tryNavigate();
       }
     });
   }
@@ -96,16 +104,61 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
     }
   }
 
-  void _navigateToResult() {
-    // TODO: Replace with actual API call result
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => ResultScreen(
-          photoFile: widget.photoFile,
-          mbti: widget.mbti,
+  Future<void> _callApi() async {
+    try {
+      final result = await ApiService.analyzePhoto(
+        photoFile: widget.photoFile,
+        mbti: widget.mbti,
+      );
+      if (mounted) {
+        setState(() {
+          _apiResult = result;
+          _apiDone = true;
+        });
+        // If animation already finished, navigate now
+        if (_progressController.isCompleted) {
+          _tryNavigate();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _apiError = e.toString();
+          _apiDone = true;
+        });
+        if (_progressController.isCompleted) {
+          _tryNavigate();
+        }
+      }
+    }
+  }
+
+  void _tryNavigate() {
+    if (!_apiDone) return; // Wait for API
+
+    if (_apiError != null) {
+      // Show error and go back
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('분석 실패: $_apiError'),
+          backgroundColor: Colors.red.shade700,
         ),
-      ),
-    );
+      );
+      Navigator.of(context).pop();
+      return;
+    }
+
+    if (_apiResult != null) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ResultScreen(
+            photoFile: widget.photoFile,
+            mbti: widget.mbti,
+            result: _apiResult,
+          ),
+        ),
+      );
+    }
   }
 
   @override
