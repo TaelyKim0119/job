@@ -21,13 +21,13 @@ class GoldButton extends StatelessWidget {
       width: double.infinity,
       height: 56,
       decoration: BoxDecoration(
-        gradient: AppColors.goldGradient,
-        borderRadius: BorderRadius.circular(24),
+        color: AppColors.ctaPrimary,
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: AppColors.goldWarm.withValues(alpha: 0.3),
-            blurRadius: 32,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -35,30 +35,29 @@ class GoldButton extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: isLoading ? null : onPressed,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(14),
           child: Center(
             child: isLoading
                 ? const SizedBox(
                     width: 24, height: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(AppColors.void_),
+                      valueColor: AlwaysStoppedAnimation(AppColors.inkInverted),
                     ),
                   )
                 : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (icon != null) ...[
-                        Icon(icon, color: AppColors.void_, size: 20),
+                        Icon(icon, color: AppColors.inkInverted, size: 20),
                         const SizedBox(width: 8),
                       ],
                       Text(
                         text,
                         style: const TextStyle(
-                          fontFamily: 'Pretendard',
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.void_,
+                          color: AppColors.inkInverted,
                         ),
                       ),
                     ],

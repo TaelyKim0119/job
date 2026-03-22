@@ -16,6 +16,8 @@ class FaceFeatures(BaseModel):
     mouth: str  # 입 특성
     jawline: str  # 턱선 특성
     face_shape: str  # 얼굴형
+    animal_type: str = ""  # 동물상 (강아지상, 고양이상 등)
+    animal_description: str = ""  # 동물상 판별 이유
     personality_summary: str  # 관상 종합 성격 요약
 
 

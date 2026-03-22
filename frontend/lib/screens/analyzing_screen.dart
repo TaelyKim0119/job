@@ -1,19 +1,19 @@
-import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
+import '../services/photo_service.dart';
 import '../models/analysis_result.dart';
 import 'result_screen.dart';
 
 class AnalyzingScreen extends StatefulWidget {
-  final File photoFile;
+  final PhotoData photo;
   final String mbti;
 
   const AnalyzingScreen({
     super.key,
-    required this.photoFile,
+    required this.photo,
     required this.mbti,
   });
 
@@ -34,11 +34,11 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
   bool _apiDone = false;
 
   final List<_Stage> _stages = [
-    _Stage('얼굴형 & 이마 분석 중...', '인내심과 리더십의 지표를 읽고 있어요', Icons.face),
-    _Stage('눈매 & 눈썹 해석 중...', '감수성과 직관력의 창을 들여다봐요', Icons.visibility),
-    _Stage('코 & 입 특성 파악 중...', '의지력과 표현력의 흔적을 찾아요', Icons.tag_faces),
-    _Stage('MBTI 데이터와 결합 중...', '성격과 관상의 교차점을 계산해요', Icons.psychology),
-    _Stage('최적 직업을 매칭하는 중...', '수천 개의 직업 데이터와 대조 중이에요', Icons.work_outline),
+    _Stage('얼굴형 & 이마 분석 중...', '인내심과 리더십의 지표를 읽고 있어요'),
+    _Stage('눈매 & 눈썹 해석 중...', '감수성과 직관력의 창을 들여다봐요'),
+    _Stage('코 & 입 특성 파악 중...', '의지력과 표현력의 흔적을 찾아요'),
+    _Stage('MBTI 데이터와 결합 중...', '성격과 관상의 교차점을 계산해요'),
+    _Stage('최적 직업을 매칭하는 중...', '수천 개의 직업 데이터와 대조 중이에요'),
   ];
 
   final List<String> _funFacts = [
@@ -57,8 +57,7 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
       vsync: this,
       duration: const Duration(seconds: 18),
     )..addListener(() {
-        final stageIndex =
-            (_progressController.value * _stages.length).floor();
+        final stageIndex = (_progressController.value * _stages.length).floor();
         if (stageIndex != _currentStage && stageIndex < _stages.length) {
           setState(() => _currentStage = stageIndex);
           HapticFeedback.mediumImpact();
@@ -66,25 +65,17 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
       });
 
     _rotateController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
+      vsync: this, duration: const Duration(seconds: 3),
     )..repeat();
 
     _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      vsync: this, duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
-    // Start analysis animation
     _progressController.forward();
-
-    // Start actual API call
     _callApi();
-
-    // Cycle fun facts
     _cycleFunFacts();
 
-    // When animation completes, wait for API if needed
     _progressController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         HapticFeedback.heavyImpact();
@@ -93,56 +84,32 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
     });
   }
 
-  void _cycleFunFacts() async {
-    while (mounted && !_progressController.isCompleted) {
-      await Future.delayed(const Duration(seconds: 4));
-      if (mounted) {
-        setState(() {
-          _funFactIndex = (_funFactIndex + 1) % _funFacts.length;
-        });
-      }
-    }
-  }
-
   Future<void> _callApi() async {
     try {
       final result = await ApiService.analyzePhoto(
-        photoFile: widget.photoFile,
+        photoBytes: widget.photo.bytes,
+        fileName: widget.photo.xFile.name,
         mbti: widget.mbti,
       );
       if (mounted) {
-        setState(() {
-          _apiResult = result;
-          _apiDone = true;
-        });
-        // If animation already finished, navigate now
-        if (_progressController.isCompleted) {
-          _tryNavigate();
-        }
+        setState(() { _apiResult = result; _apiDone = true; });
+        if (_progressController.isCompleted) _tryNavigate();
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _apiError = e.toString();
-          _apiDone = true;
-        });
-        if (_progressController.isCompleted) {
-          _tryNavigate();
-        }
+        setState(() { _apiError = e.toString(); _apiDone = true; });
+        if (_progressController.isCompleted) _tryNavigate();
       }
     }
   }
 
   void _tryNavigate() {
-    if (!_apiDone) return; // Wait for API
+    if (!_apiDone) return;
 
     if (_apiError != null) {
-      // Show error and go back
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('분석 실패: $_apiError'),
-          backgroundColor: Colors.red.shade700,
-        ),
+        SnackBar(content: Text('분석 실패: $_apiError'),
+            backgroundColor: Colors.red.shade700),
       );
       Navigator.of(context).pop();
       return;
@@ -152,12 +119,19 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => ResultScreen(
-            photoFile: widget.photoFile,
+            photoBytes: widget.photo.bytes,
             mbti: widget.mbti,
             result: _apiResult,
           ),
         ),
       );
+    }
+  }
+
+  void _cycleFunFacts() async {
+    while (mounted && !_progressController.isCompleted) {
+      await Future.delayed(const Duration(seconds: 4));
+      if (mounted) setState(() => _funFactIndex = (_funFactIndex + 1) % _funFacts.length);
     }
   }
 
@@ -172,54 +146,33 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.void_,
+      backgroundColor: AppColors.canvas,
       body: SafeArea(
         child: AnimatedBuilder(
-          animation: Listenable.merge([
-            _progressController,
-            _rotateController,
-            _pulseController,
-          ]),
+          animation: Listenable.merge([_progressController, _rotateController, _pulseController]),
           builder: (context, _) {
             return Column(
               children: [
                 const SizedBox(height: 48),
-
-                // Photo with animated rings
                 _buildPhotoWithRings(),
-
                 const SizedBox(height: 48),
-
-                // Current stage text
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 400),
                   child: Column(
                     key: ValueKey(_currentStage),
                     children: [
-                      Text(
-                        _stages[_currentStage].title,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      Text(_stages[_currentStage].title,
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700,
+                              color: AppColors.ink),
+                          textAlign: TextAlign.center),
                       const SizedBox(height: 8),
-                      Text(
-                        _stages[_currentStage].subtitle,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      Text(_stages[_currentStage].subtitle,
+                          style: TextStyle(fontSize: 14, color: AppColors.inkSecondary),
+                          textAlign: TextAlign.center),
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 40),
-
                 // Stage checklist
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -232,32 +185,19 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
                         child: Row(
                           children: [
                             Icon(
-                              isDone
-                                  ? Icons.check_circle
-                                  : (isCurrent
-                                      ? Icons.radio_button_on
-                                      : Icons.radio_button_off),
+                              isDone ? Icons.check_circle
+                                  : (isCurrent ? Icons.radio_button_on : Icons.radio_button_off),
                               size: 18,
-                              color: isDone
-                                  ? AppColors.success
-                                  : (isCurrent
-                                      ? AppColors.goldWarm
-                                      : AppColors.textTertiary),
+                              color: isDone ? AppColors.success
+                                  : (isCurrent ? AppColors.brandAmber : AppColors.inkTertiary),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: Text(
-                                _stages[i].title.replaceAll('...', ''),
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isDone || isCurrent
-                                      ? AppColors.textPrimary
-                                      : AppColors.textTertiary,
-                                  fontWeight: isCurrent
-                                      ? FontWeight.w500
-                                      : FontWeight.w400,
-                                ),
-                              ),
+                              child: Text(_stages[i].title.replaceAll('...', ''),
+                                  style: TextStyle(fontSize: 13,
+                                      color: isDone || isCurrent
+                                          ? AppColors.ink : AppColors.inkTertiary,
+                                      fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400)),
                             ),
                           ],
                         ),
@@ -265,9 +205,7 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
                     }),
                   ),
                 ),
-
                 const Spacer(),
-
                 // Progress bar
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -276,41 +214,27 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '분석 진행중',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
-                          Text(
-                            '${(_progressController.value * 100).toInt()}%',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.goldWarm,
-                            ),
-                          ),
+                          Text('분석 진행중',
+                              style: TextStyle(fontSize: 12, color: AppColors.inkTertiary)),
+                          Text('${(_progressController.value * 100).toInt()}%',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
+                                  color: AppColors.brandAmber)),
                         ],
                       ),
                       const SizedBox(height: 8),
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
+                        borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
                           value: _progressController.value,
-                          backgroundColor: AppColors.surface,
-                          valueColor: const AlwaysStoppedAnimation(
-                            AppColors.goldWarm,
-                          ),
-                          minHeight: 4,
+                          backgroundColor: AppColors.borderLight,
+                          valueColor: const AlwaysStoppedAnimation(AppColors.ctaPrimary),
+                          minHeight: 6,
                         ),
                       ),
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
                 // Fun fact
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -318,31 +242,26 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
                     duration: const Duration(milliseconds: 500),
                     child: Container(
                       key: ValueKey(_funFactIndex),
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: AppColors.surfaceLight,
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.borderLight),
                       ),
                       child: Row(
                         children: [
-                          const Text('💡', style: TextStyle(fontSize: 14)),
+                          Icon(Icons.lightbulb_outline, size: 16, color: AppColors.brandAmber),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              _funFacts[_funFactIndex],
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                                height: 1.4,
-                              ),
-                            ),
+                            child: Text(_funFacts[_funFactIndex],
+                                style: TextStyle(fontSize: 12, color: AppColors.inkSecondary,
+                                    height: 1.4)),
                           ),
                         ],
                       ),
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 32),
               ],
             );
@@ -354,69 +273,38 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
 
   Widget _buildPhotoWithRings() {
     return SizedBox(
-      width: 240,
-      height: 240,
+      width: 240, height: 240,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Outer ring 3 - pulsing
           Transform.scale(
             scale: 1.0 + (_pulseController.value * 0.05),
             child: Container(
-              width: 230,
-              height: 230,
+              width: 230, height: 230,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  width: 1,
-                ),
+                border: Border.all(color: AppColors.borderLight, width: 1),
               ),
             ),
           ),
-          // Outer ring 2 - rotating reverse
           Transform.rotate(
             angle: -_rotateController.value * 2 * pi,
-            child: CustomPaint(
-              size: const Size(210, 210),
-              painter: _DashedCirclePainter(
-                color: AppColors.purpleMid.withValues(alpha: 0.5),
-              ),
-            ),
+            child: CustomPaint(size: const Size(210, 210),
+                painter: _DashedCirclePainter(color: AppColors.inkTertiary.withValues(alpha: 0.4))),
           ),
-          // Outer ring 1 - rotating
           Transform.rotate(
             angle: _rotateController.value * 2 * pi,
-            child: CustomPaint(
-              size: const Size(190, 190),
-              painter: _DashedCirclePainter(
-                color: AppColors.goldWarm.withValues(alpha: 0.7),
-              ),
-            ),
+            child: CustomPaint(size: const Size(190, 190),
+                painter: _DashedCirclePainter(color: AppColors.brandAmber.withValues(alpha: 0.5))),
           ),
-          // Photo
           Container(
-            width: 160,
-            height: 160,
+            width: 160, height: 160,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.goldWarm.withValues(alpha: 0.3),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.goldWarm.withValues(alpha: 0.2),
-                  blurRadius: 24,
-                ),
-              ],
+              border: Border.all(color: AppColors.borderStrong, width: 2),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 24)],
             ),
-            child: ClipOval(
-              child: Image.file(
-                widget.photoFile,
-                fit: BoxFit.cover,
-              ),
-            ),
+            child: ClipOval(child: Image.memory(widget.photo.bytes, fit: BoxFit.cover)),
           ),
         ],
       ),
@@ -426,29 +314,17 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
 
 class _DashedCirclePainter extends CustomPainter {
   final Color color;
-
   _DashedCirclePainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-
+    final paint = Paint()..color = color..strokeWidth = 1.5..style = PaintingStyle.stroke;
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
-    const dashCount = 36;
-
-    for (int i = 0; i < dashCount; i++) {
-      final startAngle = (i * 2 * pi) / dashCount;
-      final sweepAngle = (pi) / dashCount;
+    for (int i = 0; i < 36; i++) {
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        sweepAngle,
-        false,
-        paint,
+        (i * 2 * pi) / 36, pi / 36, false, paint,
       );
     }
   }
@@ -460,7 +336,5 @@ class _DashedCirclePainter extends CustomPainter {
 class _Stage {
   final String title;
   final String subtitle;
-  final IconData icon;
-
-  _Stage(this.title, this.subtitle, this.icon);
+  _Stage(this.title, this.subtitle);
 }

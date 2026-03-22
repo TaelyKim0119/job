@@ -5,6 +5,8 @@ class FaceFeatures {
   final String mouth;
   final String jawline;
   final String faceShape;
+  final String animalType;
+  final String animalDescription;
   final String personalitySummary;
 
   FaceFeatures({
@@ -14,6 +16,8 @@ class FaceFeatures {
     required this.mouth,
     required this.jawline,
     required this.faceShape,
+    this.animalType = '',
+    this.animalDescription = '',
     required this.personalitySummary,
   });
 
@@ -25,6 +29,8 @@ class FaceFeatures {
       mouth: json['mouth'] ?? '',
       jawline: json['jawline'] ?? '',
       faceShape: json['face_shape'] ?? '',
+      animalType: json['animal_type'] ?? '',
+      animalDescription: json['animal_description'] ?? '',
       personalitySummary: json['personality_summary'] ?? '',
     );
   }

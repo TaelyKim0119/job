@@ -50,4 +50,25 @@ class AppColors {
     end: Alignment.bottomCenter,
     colors: [purpleDeep, void_],
   );
+
+  // ─── Light Theme (Tailwind-inspired) ───
+  static const Color canvas = Color(0xFFFAFAF8);
+  static const Color surfaceLight = Color(0xFFF4F3F0);
+  static const Color borderLight = Color(0xFFE2DFD9);
+  static const Color borderStrong = Color(0xFFC8C4BB);
+
+  // Brand Amber
+  static const Color brandAmber = Color(0xFFB8860B);
+  static const Color brandAmberBg = Color(0xFFFEF3C7);
+  static const Color brandAmberText = Color(0xFF92400E);
+
+  // Light Text
+  static const Color ink = Color(0xFF1C1917);
+  static const Color inkSecondary = Color(0xFF78716C);
+  static const Color inkTertiary = Color(0xFFA8A29E);
+  static const Color inkInverted = Color(0xFFFAFAF8);
+
+  // CTA
+  static const Color ctaPrimary = Color(0xFF1C1917);
+  static const Color ctaHover = Color(0xFF292524);
 }

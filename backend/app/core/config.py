@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     supabase_key: str = ""
     supabase_service_key: str = ""
 
+    # Google Gemini
+    gemini_api_key: str = ""
+
     # Replicate
     replicate_api_token: str = ""
 

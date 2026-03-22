@@ -1,12 +1,12 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../models/analysis_result.dart';
 
 class ApiService {
-  // Android 에뮬레이터: 10.0.2.2, iOS 시뮬레이터: localhost
-  // 실제 디바이스: 컴퓨터의 로컬 IP 주소 사용
-  static const String _baseUrl = 'http://10.0.2.2:8000';
+  // 웹에서는 localhost 직접 사용
+  static const String _baseUrl = 'http://localhost:8000';
 
   static String get baseUrl => _baseUrl;
 
@@ -22,34 +22,62 @@ class ApiService {
     }
   }
 
-  /// 사진 업로드 + 관상/MBTI 분석 요청
+  /// 사진 바이트 + MBTI로 분석 요청
   static Future<AnalysisResult> analyzePhoto({
-    required File photoFile,
+    required Uint8List photoBytes,
+    required String fileName,
     required String mbti,
   }) async {
     final uri = Uri.parse('$_baseUrl/api/analysis/upload-and-analyze');
 
-    final request = http.MultipartRequest('POST', uri)
-      ..fields['mbti'] = mbti
-      ..files.add(await http.MultipartFile.fromPath(
-        'photo',
-        photoFile.path,
-        filename: 'selfie.jpg',
-      ));
+    // 파일 확장자에서 content type 추론
+    final ext = fileName.split('.').last.toLowerCase();
+    final mimeType = switch (ext) {
+      'png' => 'image/png',
+      'gif' => 'image/gif',
+      'webp' => 'image/webp',
+      _ => 'image/jpeg',
+    };
 
-    final streamedResponse =
-        await request.send().timeout(const Duration(seconds: 120));
-    final response = await http.Response.fromStream(streamedResponse);
+    print('[ApiService] 요청 시작: $uri, MBTI=$mbti, 파일=$fileName, '
+        '크기=${photoBytes.length}bytes, MIME=$mimeType');
 
-    if (response.statusCode == 200) {
-      final json = jsonDecode(utf8.decode(response.bodyBytes));
-      return AnalysisResult.fromJson(json);
-    } else {
-      final error = jsonDecode(utf8.decode(response.bodyBytes));
-      throw ApiException(
-        statusCode: response.statusCode,
-        message: error['detail'] ?? '분석 중 오류가 발생했습니다',
-      );
+    try {
+      final request = http.MultipartRequest('POST', uri)
+        ..fields['mbti'] = mbti
+        ..files.add(http.MultipartFile.fromBytes(
+          'photo',
+          photoBytes,
+          filename: fileName,
+          contentType: MediaType.parse(mimeType),
+        ));
+
+      final streamedResponse =
+          await request.send().timeout(const Duration(seconds: 120));
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('[ApiService] 응답 코드: ${response.statusCode}');
+      print('[ApiService] 응답 본문: ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}');
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(utf8.decode(response.bodyBytes));
+        return AnalysisResult.fromJson(json);
+      } else {
+        String errorMsg = '분석 중 오류가 발생했습니다';
+        try {
+          final error = jsonDecode(utf8.decode(response.bodyBytes));
+          errorMsg = error['detail'] ?? errorMsg;
+        } catch (_) {
+          errorMsg = response.body;
+        }
+        throw ApiException(
+          statusCode: response.statusCode,
+          message: errorMsg,
+        );
+      }
+    } catch (e) {
+      print('[ApiService] 에러 발생: $e');
+      rethrow;
     }
   }
 }
