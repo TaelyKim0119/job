@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+@theme {
+  --color-canvas: #FAFAF8;
+  --color-surface: #F5F5F0;
+  --color-surface-light: #FFFFFF;
+  --color-ink: #1C1917;
+  --color-ink-secondary: #57534E;
+  --color-ink-tertiary: #A8A29E;
+  --color-ink-inverted: #FFFFFF;
+  --color-brand-amber: #B8860B;
+  --color-brand-amber-bg: #FEF7E0;
+  --color-brand-amber-text: #92680A;
+  --color-border-light: #E7E5E4;
+  --color-border-strong: #D6D3D1;
+  --color-success: #16A34A;
+  --color-introvert: #4A7FBF;
+  --color-extrovert: #D94F4F;
+  --color-gold: #B8860B;
+  --color-silver: #78716C;
+  --color-bronze: #CD7F32;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+.animate-spin-reverse {
+  animation: spin-reverse 3s linear infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 1.5s ease-in-out infinite;
+}
+
+/* ── AnalyzingPage: Pentagon Oracle ───────────────────────── */
+
+@keyframes oracle-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50%       { transform: scale(1.08); opacity: 1; }
+}
+
+@keyframes oracle-ring-1 {
+  0%   { transform: scale(1) rotate(0deg);   opacity: 0.25; }
+  50%  { transform: scale(1.04) rotate(180deg); opacity: 0.5; }
+  100% { transform: scale(1) rotate(360deg); opacity: 0.25; }
+}
+
+@keyframes oracle-ring-2 {
+  0%   { transform: scale(1) rotate(0deg);    opacity: 0.15; }
+  50%  { transform: scale(1.06) rotate(-180deg); opacity: 0.35; }
+  100% { transform: scale(1) rotate(-360deg); opacity: 0.15; }
+}
+
+@keyframes oracle-ring-3 {
+  0%   { transform: scale(0.96) rotate(0deg);    opacity: 0.1; }
+  50%  { transform: scale(1.02) rotate(90deg);   opacity: 0.28; }
+  100% { transform: scale(0.96) rotate(180deg);  opacity: 0.1; }
+}
+
+@keyframes node-activate {
+  0%   { transform: scale(0.7); opacity: 0;   filter: blur(4px); }
+  40%  { transform: scale(1.18); opacity: 1;  filter: blur(0px); }
+  65%  { transform: scale(0.94); }
+  82%  { transform: scale(1.05); }
+  100% { transform: scale(1);   opacity: 1;   filter: blur(0px); }
+}
+
+@keyframes node-pulse-active {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(184,134,11,0), 0 0 12px 2px rgba(184,134,11,0.18); }
+  50%       { box-shadow: 0 0 0 6px rgba(184,134,11,0.12), 0 0 20px 6px rgba(184,134,11,0.28); }
+}
+
+@keyframes node-complete-shimmer {
+  0%   { box-shadow: 0 0 8px 2px rgba(184,134,11,0.25); }
+  50%  { box-shadow: 0 0 16px 5px rgba(184,134,11,0.45); }
+  100% { box-shadow: 0 0 8px 2px rgba(184,134,11,0.25); }
+}
+
+@keyframes connector-draw {
+  from { stroke-dashoffset: 200; opacity: 0; }
+  to   { stroke-dashoffset: 0;   opacity: 1; }
+}
+
+@keyframes connector-flow {
+  0%   { stroke-dashoffset: 24; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes stage-desc-in {
+  0%   { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes progress-glow {
+  0%, 100% { box-shadow: 0 0 6px 1px rgba(184,134,11,0.3); }
+  50%       { box-shadow: 0 0 12px 3px rgba(184,134,11,0.55); }
+}
+
+@keyframes photo-halo {
+  0%   { opacity: 0.3; transform: scale(0.98) rotate(0deg); }
+  50%  { opacity: 0.7; transform: scale(1.02) rotate(180deg); }
+  100% { opacity: 0.3; transform: scale(0.98) rotate(360deg); }
+}
+
+@keyframes ticker-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-oracle-breathe    { animation: oracle-breathe 3.2s ease-in-out infinite; }
+.animate-oracle-ring-1     { animation: oracle-ring-1 9s linear infinite; }
+.animate-oracle-ring-2     { animation: oracle-ring-2 13s linear infinite; }
+.animate-oracle-ring-3     { animation: oracle-ring-3 7s ease-in-out infinite; }
+.animate-node-active       { animation: node-pulse-active 2s ease-in-out infinite; }
+.animate-node-complete     { animation: node-complete-shimmer 3s ease-in-out infinite; }
+.animate-progress-glow     { animation: progress-glow 2s ease-in-out infinite; }
+.animate-photo-halo        { animation: photo-halo 8s linear infinite; }
+.animate-stage-desc-in     { animation: stage-desc-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+.animate-ticker-in         { animation: ticker-in 0.35s ease both; }
