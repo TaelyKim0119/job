@@ -21,7 +21,7 @@ function FlipCard({ type, name, isSelected, onSelect }) {
     <div
       onClick={() => onSelect(type)}
       className="cursor-pointer"
-      style={{ perspective: '600px', height: '80px' }}
+      style={{ perspective: '600px', height: '120px' }}
     >
       <div
         style={{

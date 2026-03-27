@@ -1,5 +1,15 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+
+function useIsMobile(breakpoint = 520) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [breakpoint])
+  return isMobile
+}
 
 // ── 5단계 관상 분석 노드 ──────────────────────────────────────
 const STAGES = [
@@ -64,23 +74,22 @@ const TOTAL_DURATION = 25000
 const STAGE_DURATION = TOTAL_DURATION / STAGES.length
 
 // ── Pentagon 좌표 계산 ────────────────────────────────────────
-const PENTAGON_SIZE = 210
-const PENTAGON_R = 80
-const CENTER = PENTAGON_SIZE / 2
-const NODE_SIZE = 50
-
-function getPentagonNodes() {
+function getPentagonNodes(size) {
+  const center = size / 2
+  const r = size * 0.38
+  const nodeSize = size * 0.24
   return STAGES.map((stage, i) => {
     const angleDeg = -90 + i * 72
     const angleRad = (angleDeg * Math.PI) / 180
-    const cx = CENTER + PENTAGON_R * Math.cos(angleRad)
-    const cy = CENTER + PENTAGON_R * Math.sin(angleRad)
+    const cx = center + r * Math.cos(angleRad)
+    const cy = center + r * Math.sin(angleRad)
     return {
       ...stage,
       cx,
       cy,
-      left: cx - NODE_SIZE / 2,
-      top: cy - NODE_SIZE / 2,
+      left: cx - nodeSize / 2,
+      top: cy - nodeSize / 2,
+      nodeSize,
     }
   })
 }
@@ -123,8 +132,12 @@ export default function AnalyzingPage() {
 
   const photoUrl = location.state?.photoDataUrl || localStorage.getItem('photoDataUrl')
   const mbti = location.state?.mbti
+  const isMobile = useIsMobile()
 
-  const nodes = useMemo(() => getPentagonNodes(), [])
+  // 반응형 사이즈 (데스크탑은 크게)
+  const PSIZE = isMobile ? 240 : 400
+  const CENTER = PSIZE / 2
+  const nodes = useMemo(() => getPentagonNodes(PSIZE), [PSIZE])
 
   function tryNavigate() {
     if (hasNavigatedRef.current || !animationDoneRef.current || !apiDoneRef.current) return
@@ -213,9 +226,9 @@ export default function AnalyzingPage() {
       }}
     >
       {/* ── 상단 헤더 ── */}
-      <div style={{ width: '100%', maxWidth: 440, marginBottom: 4 }}>
+      <div style={{ width: '100%', maxWidth: isMobile ? 400 : 860, marginBottom: isMobile ? 10 : 10 }}>
         <p style={{
-          fontSize: 10,
+          fontSize: isMobile ? 10 : 16,
           letterSpacing: '0.18em',
           textTransform: 'uppercase',
           color: 'var(--color-ink-tertiary)',
@@ -225,7 +238,7 @@ export default function AnalyzingPage() {
           AI 관상 분석
         </p>
         <h2 style={{
-          fontSize: 17,
+          fontSize: isMobile ? 17 : 32,
           fontWeight: 700,
           color: 'var(--color-ink)',
           textAlign: 'center',
@@ -236,13 +249,14 @@ export default function AnalyzingPage() {
         </h2>
       </div>
 
-      {/* ── 메인 영역: 오각형(좌) + 설명(우) ── */}
+      {/* ── 메인 영역: 모바일=세로, 데스크탑=가로 ── */}
       <div style={{
         display: 'flex',
-        alignItems: 'flex-start',
-        gap: 8,
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: isMobile ? 'center' : 'flex-start',
+        gap: isMobile ? 12 : 32,
         width: '100%',
-        maxWidth: 440,
+        maxWidth: isMobile ? 400 : 860,
         marginTop: 8,
         minHeight: 0,
       }}>
@@ -251,8 +265,8 @@ export default function AnalyzingPage() {
       <div
         style={{
           position: 'relative',
-          width: PENTAGON_SIZE,
-          height: PENTAGON_SIZE,
+          width: PSIZE,
+          height: PSIZE,
           flexShrink: 0,
         }}
       >
@@ -290,9 +304,9 @@ export default function AnalyzingPage() {
 
         {/* SVG: 오각형 윤곽선 + 방사선(스포크) */}
         <svg
-          viewBox={`0 0 ${PENTAGON_SIZE} ${PENTAGON_SIZE}`}
-          width={PENTAGON_SIZE}
-          height={PENTAGON_SIZE}
+          viewBox={`0 0 ${PSIZE} ${PSIZE}`}
+          width={PSIZE}
+          height={PSIZE}
           style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
         >
           <defs>
@@ -350,17 +364,17 @@ export default function AnalyzingPage() {
           })}
 
           {/* 중심 사진 위 비네팅 */}
-          <circle cx={CENTER} cy={CENTER} r={36} fill="url(#photo-vignette)" />
+          <circle cx={CENTER} cy={CENTER} r={PSIZE * 0.17} fill="url(#photo-vignette)" />
         </svg>
 
         {/* ── 중심 사진 원 ── */}
         <div
           style={{
             position: 'absolute',
-            left: CENTER - 34,
-            top: CENTER - 34,
-            width: 68,
-            height: 68,
+            left: CENTER - PSIZE * 0.16,
+            top: CENTER - PSIZE * 0.16,
+            width: PSIZE * 0.32,
+            height: PSIZE * 0.32,
           }}
         >
           {/* 포토 헤일로 — 회전하는 점선 링 */}
@@ -427,8 +441,8 @@ export default function AnalyzingPage() {
                 position: 'absolute',
                 left: node.left,
                 top: node.top,
-                width: NODE_SIZE,
-                height: NODE_SIZE,
+                width: node.nodeSize,
+                height: node.nodeSize,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -443,8 +457,8 @@ export default function AnalyzingPage() {
                   isDone   ? 'animate-node-complete' : ''
                 }
                 style={{
-                  width: 34,
-                  height: 34,
+                  width: PSIZE * 0.15,
+                  height: PSIZE * 0.15,
                   borderRadius: '50%',
                   display: 'flex',
                   flexDirection: 'column',
@@ -502,7 +516,7 @@ export default function AnalyzingPage() {
                 lineHeight: 1.2,
               }}>
                 <div style={{
-                  fontSize: 8.5,
+                  fontSize: isMobile ? 9.5 : 14,
                   fontWeight: isActive ? 700 : 500,
                   color: isActive
                     ? 'var(--color-ink)'
@@ -515,7 +529,7 @@ export default function AnalyzingPage() {
                   {node.title}
                 </div>
                 <div style={{
-                  fontSize: 7.5,
+                  fontSize: isMobile ? 8 : 12,
                   color: isActive ? 'var(--color-ink-tertiary)' : 'rgba(168,162,158,0.5)',
                   marginTop: 1,
                   transition: 'color 0.3s ease',
@@ -528,70 +542,71 @@ export default function AnalyzingPage() {
         })}
       </div>
 
-      {/* ── 현재 단계 설명 카드 (오른쪽) ── */}
+      {/* ── 현재 단계 설명 카드 ── */}
       <div
         key={descKey}
         className="animate-stage-desc-in"
         style={{
-          flex: 1,
+          flex: isMobile ? 'none' : 1,
+          width: isMobile ? '100%' : undefined,
           minWidth: 0,
-          padding: '12px 14px',
+          padding: isMobile ? '12px 14px' : '24px 28px',
           borderRadius: 14,
-          backgroundColor: 'white',
-          border: '1px solid rgba(184,134,11,0.15)',
-          boxShadow: '0 2px 12px rgba(184,134,11,0.06)',
-          overflowY: 'auto',
-          maxHeight: PENTAGON_SIZE,
+          backgroundColor: '#1C1917',
+          border: '1px solid rgba(184,134,11,0.3)',
+          boxShadow: '0 2px 16px rgba(0,0,0,0.2)',
+          overflow: 'hidden',
+          maxHeight: isMobile ? undefined : PSIZE + 20,
         }}
       >
         {/* 카드 헤더 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: isMobile ? 8 : 12 }}>
           <div style={{
-            width: 24,
-            height: 24,
+            width: isMobile ? 26 : 36,
+            height: isMobile ? 26 : 36,
             borderRadius: '50%',
-            backgroundColor: 'rgba(184,134,11,0.1)',
+            backgroundColor: 'rgba(184,134,11,0.2)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 11,
+            fontSize: isMobile ? 11 : 16,
             fontWeight: 700,
-            color: 'var(--color-brand-amber)',
+            color: '#D4A017',
             flexShrink: 0,
           }}>
             {STAGES[currentStage].hanja.slice(0, 1)}
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-ink)', lineHeight: 1.2 }}>
+            <div style={{ fontSize: isMobile ? 14 : 20, fontWeight: 700, color: '#FFFFFF', lineHeight: 1.2 }}>
               {STAGES[currentStage].title}
-              <span style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-ink-tertiary)', marginLeft: 4 }}>
+              <span style={{ fontSize: isMobile ? 11 : 16, fontWeight: 500, color: 'rgba(255,255,255,0.5)', marginLeft: 6 }}>
                 {STAGES[currentStage].subtitle}
               </span>
             </div>
           </div>
         </div>
         {/* 구분선 */}
-        <div style={{ width: 24, height: 1, backgroundColor: 'rgba(184,134,11,0.2)', marginBottom: 8 }} />
+        <div style={{ width: 24, height: 1, backgroundColor: 'rgba(184,134,11,0.4)', marginBottom: isMobile ? 8 : 12 }} />
         {/* 용어 설명 */}
         <div style={{
-          backgroundColor: 'rgba(184,134,11,0.06)',
+          backgroundColor: 'rgba(184,134,11,0.12)',
           borderRadius: 8,
-          padding: '8px 10px',
-          marginBottom: 8,
+          padding: isMobile ? '8px 10px' : '12px 16px',
+          marginBottom: isMobile ? 8 : 12,
         }}>
           <p style={{
-            fontSize: 11,
+            fontSize: isMobile ? 12 : 16,
             fontWeight: 700,
-            color: 'var(--color-brand-amber-text)',
-            marginBottom: 3,
-            lineHeight: 1.4,
+            color: '#D4A017',
+            marginBottom: 4,
+            lineHeight: 1.3,
           }}>
             {STAGES[currentStage].term}
           </p>
           <p style={{
-            fontSize: 11,
-            lineHeight: 1.65,
-            color: 'var(--color-ink-secondary)',
+            fontSize: isMobile ? 11.5 : 15,
+            lineHeight: 1.55,
+            color: 'rgba(255,255,255,0.7)',
             wordBreak: 'keep-all',
           }}>
             {STAGES[currentStage].termDesc}
@@ -599,20 +614,19 @@ export default function AnalyzingPage() {
         </div>
         {/* 설명 본문 */}
         <p style={{
-          fontSize: 11.5,
-          lineHeight: 1.75,
-          color: 'var(--color-ink-secondary)',
-          letterSpacing: '0.01em',
+          fontSize: isMobile ? 12 : 16,
+          lineHeight: isMobile ? 1.75 : 1.7,
+          color: 'rgba(255,255,255,0.85)',
           wordBreak: 'keep-all',
         }}>
           {STAGES[currentStage].desc}
         </p>
       </div>
 
-      </div>{/* ── /메인 영역 flex row 닫기 ── */}
+      </div>{/* ── /메인 영역 flex 닫기 ── */}
 
       {/* ── 진행률 바 ── */}
-      <div style={{ width: '100%', maxWidth: 440, marginTop: 16 }}>
+      <div style={{ width: '100%', maxWidth: isMobile ? 400 : 860, marginTop: 16 }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -692,7 +706,7 @@ export default function AnalyzingPage() {
       <div style={{
         marginTop: 16,
         width: '100%',
-        maxWidth: 440,
+        maxWidth: isMobile ? 400 : 860,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

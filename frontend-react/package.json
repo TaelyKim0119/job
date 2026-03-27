@@ -12,6 +12,7 @@
     "deploy": "npm run build && npx wrangler pages deploy dist --project-name=job-ccw"
   },
   "dependencies": {
+    "heic2any": "^0.0.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
