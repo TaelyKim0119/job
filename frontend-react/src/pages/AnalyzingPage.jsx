@@ -96,10 +96,26 @@ function getPentagonNodes(size) {
 
 // SVG: 노드 중심들을 잇는 오각형 선 + 중심까지의 방사선
 function getPentagonPath(nodes) {
-  const points = nodes.map(n => `${n.cx},${n.cy}`).join(' ')
   return `M ${nodes[0].cx} ${nodes[0].cy} ` +
     nodes.slice(1).map(n => `L ${n.cx} ${n.cy}`).join(' ') +
     ' Z'
+}
+
+// 진행률에 따라 중심→꼭짓점으로 팽창하는 에어리어 폴리곤
+function getProgressPolygonPath(nodes, progress, center) {
+  const count = nodes.length
+  const points = nodes.map((node, i) => {
+    const stageStart = (i / count) * 100
+    const stageEnd = ((i + 1) / count) * 100
+    let factor
+    if (progress >= stageEnd) factor = 1
+    else if (progress <= stageStart) factor = 0.05
+    else factor = 0.05 + 0.95 * ((progress - stageStart) / (stageEnd - stageStart))
+    const x = center + (node.cx - center) * factor
+    const y = center + (node.cy - center) * factor
+    return `${x} ${y}`
+  })
+  return `M ${points[0]} ` + points.slice(1).map(p => `L ${p}`).join(' ') + ' Z'
 }
 
 function getSpokePath(node) {
@@ -132,6 +148,7 @@ export default function AnalyzingPage() {
 
   const photoUrl = location.state?.photoDataUrl || localStorage.getItem('photoDataUrl')
   const mbti = location.state?.mbti
+  const mode = location.state?.mode || 'basic'
   const isMobile = useIsMobile()
 
   // 반응형 사이즈 (데스크탑은 크게)
@@ -156,7 +173,7 @@ export default function AnalyzingPage() {
     fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ photo: photoDataUrl, mbti }),
+      body: JSON.stringify({ photo: photoDataUrl, mbti, mode }),
       signal: controller.signal,
     })
       .then(res => { if (!res.ok) throw new Error(`서버 오류: ${res.status}`); return res.json() })
@@ -212,6 +229,7 @@ export default function AnalyzingPage() {
   }, [])
 
   const pentagonPath = useMemo(() => getPentagonPath(nodes), [nodes])
+  const progressPolygon = useMemo(() => getProgressPolygonPath(nodes, progress, CENTER), [nodes, progress, CENTER])
 
   return (
     <div
@@ -226,7 +244,7 @@ export default function AnalyzingPage() {
       }}
     >
       {/* ── 상단 헤더 ── */}
-      <div style={{ width: '100%', maxWidth: isMobile ? 400 : 860, marginBottom: isMobile ? 10 : 10 }}>
+      <div style={{ width: '100%', maxWidth: isMobile ? 400 : 860, marginBottom: isMobile ? 10 : 40 }}>
         <p style={{
           fontSize: isMobile ? 10 : 16,
           letterSpacing: '0.18em',
@@ -247,6 +265,20 @@ export default function AnalyzingPage() {
         }}>
           면상(面相)을 읽는 중
         </h2>
+        <p style={{
+          fontSize: isMobile ? 11 : 15,
+          color: 'var(--color-ink-tertiary)',
+          textAlign: 'center',
+          marginTop: isMobile ? 6 : 12,
+          lineHeight: 1.6,
+          wordBreak: 'keep-all',
+          maxWidth: 560,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+        }}>
+          이마(천정) · 눈(감찰관) · 코(심판관) · 입(출납관) 관상을 분석한 뒤,{' '}
+          오행 체질과 MBTI를 교차 대조하여 당신만의 천직(天職)을 찾습니다
+        </p>
       </div>
 
       {/* ── 메인 영역: 모바일=세로, 데스크탑=가로 ── */}
@@ -317,17 +349,45 @@ export default function AnalyzingPage() {
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+            <filter id="area-glow">
+              <feGaussianBlur stdDeviation="6" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
             <radialGradient id="photo-vignette" cx="50%" cy="50%" r="50%">
               <stop offset="60%" stopColor="transparent" />
               <stop offset="100%" stopColor="rgba(250,250,248,0.7)" />
             </radialGradient>
+            <radialGradient id="area-gradient" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="rgba(139,92,246,0.05)" />
+              <stop offset="50%" stopColor="rgba(139,92,246,0.25)" />
+              <stop offset="100%" stopColor="rgba(139,92,246,0.4)" />
+            </radialGradient>
+            {/* 중심 사진 원을 제외하는 마스크 */}
+            <mask id="area-mask">
+              <rect x="0" y="0" width={PSIZE} height={PSIZE} fill="white" />
+              <circle cx={CENTER} cy={CENTER} r={PSIZE * 0.18} fill="black" />
+            </mask>
           </defs>
+
+          {/* 보라색 에어리어 채움 */}
+          <path
+            d={progressPolygon}
+            fill="url(#area-gradient)"
+            stroke="rgba(139,92,246,0.5)"
+            strokeWidth="1.5"
+            mask="url(#area-mask)"
+            filter="url(#area-glow)"
+            style={{ transition: 'd 0.15s ease-out' }}
+          />
 
           {/* 오각형 외곽선 */}
           <path
             d={pentagonPath}
             fill="none"
-            stroke="rgba(184,134,11,0.15)"
+            stroke="rgba(139,92,246,0.2)"
             strokeWidth="1"
             strokeDasharray="4 3"
           />
@@ -345,10 +405,10 @@ export default function AnalyzingPage() {
                 y2={node.cy}
                 stroke={
                   nodeStates[i] === 'done'
-                    ? 'rgba(184,134,11,0.45)'
+                    ? 'rgba(139,92,246,0.5)'
                     : nodeStates[i] === 'active'
-                      ? 'rgba(184,134,11,0.7)'
-                      : 'rgba(184,134,11,0.08)'
+                      ? 'rgba(139,92,246,0.75)'
+                      : 'rgba(139,92,246,0.08)'
                 }
                 strokeWidth={nodeStates[i] === 'active' ? 1.5 : 1}
                 strokeDasharray={isVisible ? `${len} ${len}` : `${len} ${len}`}
@@ -625,81 +685,36 @@ export default function AnalyzingPage() {
 
       </div>{/* ── /메인 영역 flex 닫기 ── */}
 
-      {/* ── 진행률 바 ── */}
-      <div style={{ width: '100%', maxWidth: isMobile ? 400 : 860, marginTop: 16 }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'baseline',
-          marginBottom: 8,
+      {/* ── 진행률 (텍스트만) ── */}
+      <div style={{
+        width: '100%',
+        maxWidth: isMobile ? 400 : 860,
+        marginTop: 16,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+      }}>
+        <span style={{
+          fontSize: isMobile ? 11 : 13,
+          color: 'var(--color-ink-tertiary)',
+          letterSpacing: '0.05em',
         }}>
-          <span style={{
-            fontSize: 11,
-            color: 'var(--color-ink-tertiary)',
-            letterSpacing: '0.05em',
-          }}>
-            분석 진행률
-          </span>
-          <span
-            key={`pct-${Math.floor(progress / 5)}`}
-            className="animate-ticker-in"
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: 'var(--color-brand-amber)',
-              fontVariantNumeric: 'tabular-nums',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            {Math.round(progress)}%
-          </span>
-        </div>
-
-        {/* 트랙 */}
-        <div style={{
-          width: '100%',
-          height: 3,
-          backgroundColor: 'rgba(168,162,158,0.15)',
-          borderRadius: 2,
-          overflow: 'hidden',
-        }}>
-          <div
-            className="animate-progress-glow"
-            style={{
-              height: '100%',
-              width: `${progress}%`,
-              background: 'linear-gradient(90deg, rgba(184,134,11,0.6) 0%, #B8860B 60%, #D4A017 100%)',
-              borderRadius: 2,
-              transition: 'width 0.1s linear',
-            }}
-          />
-        </div>
-
-        {/* 단계 인디케이터 도트 */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginTop: 8,
-          paddingLeft: 1,
-          paddingRight: 1,
-        }}>
-          {STAGES.map((_, i) => (
-            <div
-              key={i}
-              style={{
-                width: 4,
-                height: 4,
-                borderRadius: '50%',
-                backgroundColor: nodeStates[i] === 'done'
-                  ? 'var(--color-brand-amber)'
-                  : nodeStates[i] === 'active'
-                    ? 'rgba(184,134,11,0.6)'
-                    : 'rgba(168,162,158,0.2)',
-                transition: 'background-color 0.4s ease',
-              }}
-            />
-          ))}
-        </div>
+          분석 진행률
+        </span>
+        <span
+          key={`pct-${Math.floor(progress / 5)}`}
+          className="animate-ticker-in"
+          style={{
+            fontSize: isMobile ? 15 : 18,
+            fontWeight: 700,
+            color: '#8B5CF6',
+            fontVariantNumeric: 'tabular-nums',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          {Math.round(progress)}%
+        </span>
       </div>
 
       {/* ── 하단 안내 ── */}

@@ -126,7 +126,7 @@ export default function PhotoPage() {
             <p className="text-sm text-ink-secondary">사진 처리 중...</p>
           </div>
         ) : photoPreview ? (
-          <div className="w-full max-w-[200px] flex flex-col items-center">
+          <div className="w-full max-w-[400px] flex flex-col items-center">
             {/* 스텝 인디케이터 */}
             <div className="flex justify-center" style={{ marginBottom: 24, width: 120 }}>
               <div style={{ width: '100%' }}>
@@ -145,12 +145,12 @@ export default function PhotoPage() {
               <img src={photoPreview} alt="선택된 사진" className="w-full h-full object-cover" />
               <div className="absolute bottom-3 left-0 right-0 flex justify-center">
                 <div className="bg-white/90 border border-border-light rounded-full px-3 py-1.5 flex items-center gap-1.5">
-                  <CheckCircle size={14} className="text-success" />
-                  <span className="text-xs font-medium text-success">사진 준비 완료</span>
+                  <CheckCircle size={20} className="text-success" />
+                  <span className="text-sm font-medium text-success">사진 준비 완료</span>
                 </div>
               </div>
             </div>
-            <button onClick={handleReset} className="mt-3 text-sm text-ink-tertiary hover:text-ink-secondary transition-colors">
+            <button onClick={handleReset} className="mt-4 text-base text-ink-tertiary hover:text-ink-secondary transition-colors">
               다시 선택하기
             </button>
             <button
@@ -177,12 +177,12 @@ export default function PhotoPage() {
             </div>
             <label
               htmlFor={galleryId}
-              className="w-36 h-36 rounded-full border-2 border-border-strong bg-surface-light flex flex-col items-center justify-center gap-2 hover:border-brand-amber hover:bg-brand-amber-bg/30 transition-all active:scale-95 cursor-pointer"
+              className="w-72 h-72 rounded-full border-2 border-border-strong bg-surface-light flex flex-col items-center justify-center gap-3 hover:border-brand-amber hover:bg-brand-amber-bg/30 transition-all active:scale-95 cursor-pointer"
             >
-              <ImageIcon size={32} className="text-brand-amber" />
+              <ImageIcon size={56} className="text-brand-amber" />
               <div className="text-center">
-                <p className="text-sm font-semibold text-ink">사진 선택</p>
-                <p className="text-[10px] text-ink-tertiary mt-0.5">갤러리에서 선택</p>
+                <p className="text-xl font-semibold text-ink">사진 선택</p>
+                <p className="text-sm text-ink-tertiary mt-1">갤러리에서 선택</p>
               </div>
               <input
                 id={galleryId}
@@ -194,9 +194,9 @@ export default function PhotoPage() {
               />
             </label>
 
-            <div className="w-full bg-surface rounded-xl border border-border-light p-3 flex items-start gap-2.5">
-              <Lightbulb size={16} className="text-brand-amber flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-ink-secondary">정면 사진이 가장 정확한 분석 결과를 제공합니다</p>
+            <div className="w-full bg-surface rounded-xl border border-border-light p-4 flex items-start gap-3">
+              <Lightbulb size={22} className="text-brand-amber flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-ink-secondary">정면 사진이 가장 정확한 분석 결과를 제공합니다</p>
             </div>
           </div>
         )}

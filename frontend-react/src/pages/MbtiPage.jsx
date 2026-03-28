@@ -58,10 +58,10 @@ export default function MbtiPage() {
   const navigate = useNavigate()
   const [selected, setSelected] = useState(null)
 
-  function handleSubmit() {
+  function handleSubmit(mode = 'basic') {
     if (!selected) return
     const photoDataUrl = localStorage.getItem('photoDataUrl')
-    navigate('/analyzing', { state: { mbti: selected, photoDataUrl } })
+    navigate('/analyzing', { state: { mbti: selected, photoDataUrl, mode } })
   }
 
   return (
@@ -82,7 +82,7 @@ export default function MbtiPage() {
         </p>
       </div>
 
-      <div className="px-6 flex-1">
+      <div className="px-6">
         <div className="grid grid-cols-4 gap-1.5">
           {MBTI_TYPES.map((type) => (
             <FlipCard
@@ -94,24 +94,43 @@ export default function MbtiPage() {
             />
           ))}
         </div>
-      </div>
 
-      <div className="px-6 py-5">
-        <button
-          onClick={handleSubmit}
-          disabled={!selected}
-          className={`
-            w-full py-3 rounded-xl font-semibold text-[15px]
-            flex items-center justify-center gap-2 transition-all duration-200
-            ${selected
-              ? 'bg-ink text-ink-inverted active:scale-[0.98]'
-              : 'bg-border-light text-ink-tertiary cursor-not-allowed'
-            }
-          `}
-        >
-          분석 시작하기
-          <ArrowRight size={16} />
-        </button>
+        <div className="flex gap-2.5 mt-5">
+          <button
+            onClick={() => handleSubmit('basic')}
+            disabled={!selected}
+            className={`
+              flex-[4] py-3 rounded-xl font-semibold text-[15px]
+              flex items-center justify-center gap-1.5 transition-all duration-200
+              ${selected
+                ? 'bg-border-strong text-ink active:scale-[0.98]'
+                : 'bg-border-light text-ink-tertiary cursor-not-allowed'
+              }
+            `}
+          >
+            분석 시작
+            <ArrowRight size={16} />
+          </button>
+          <button
+            onClick={() => handleSubmit('premium')}
+            disabled={!selected}
+            className={`
+              flex-[6] py-3 rounded-xl font-semibold text-[15px]
+              flex items-center justify-center gap-1.5 transition-all duration-200
+              ${selected
+                ? 'active:scale-[0.98]'
+                : 'cursor-not-allowed'
+              }
+            `}
+            style={{
+              backgroundColor: selected ? '#B8860B' : undefined,
+              color: selected ? '#FFFFFF' : undefined,
+            }}
+          >
+            고급 분석
+            <span className="text-[11px] font-normal" style={{ color: selected ? 'rgba(255,255,255,0.85)' : undefined }}>심층 감정</span>
+          </button>
+        </div>
       </div>
     </div>
   )
