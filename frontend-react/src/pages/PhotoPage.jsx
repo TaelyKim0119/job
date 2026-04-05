@@ -52,20 +52,6 @@ export default function PhotoPage() {
     return () => {}
   }, [])
 
-  // 모바일 카메라 복귀 시 file input 변경 감지 (일부 브라우저에서 onChange 누락 대응)
-  useEffect(() => {
-    function handleVisibilityChange() {
-      if (document.visibilityState === 'visible' && fileInputRef.current) {
-        const files = fileInputRef.current.files
-        if (files && files.length > 0 && !photoPreview && !loading) {
-          handleFileSelect({ target: fileInputRef.current })
-        }
-      }
-    }
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [photoPreview, loading])
-
   async function handleFileSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -195,8 +181,8 @@ export default function PhotoPage() {
             >
               <ImageIcon size={56} className="text-brand-amber" />
               <div className="text-center">
-                <p className="text-xl font-semibold text-ink">사진 선택</p>
-                <p className="text-sm text-ink-tertiary mt-1">갤러리에서 선택</p>
+                <p className="text-xl font-semibold text-ink">갤러리에서 선택</p>
+                <p className="text-sm text-ink-tertiary mt-1">앨범에서 사진을 골라주세요</p>
               </div>
               <input
                 ref={fileInputRef}
@@ -204,8 +190,7 @@ export default function PhotoPage() {
                 type="file"
                 accept="image/*"
                 onChange={handleFileSelect}
-                className="absolute w-0 h-0 opacity-0 overflow-hidden"
-                style={{ position: 'absolute', width: 0, height: 0, opacity: 0, overflow: 'hidden' }}
+                style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}
               />
             </label>
 
