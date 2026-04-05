@@ -395,31 +395,33 @@ export default function ResultPage() {
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : (face?.animal_type && face?.personality_summary ? '1fr 1fr' : '1fr'),
-          gap: isMobile ? 12 : 16,
-          marginTop: isMobile ? 16 : 24,
+          gap: isMobile ? 14 : 20,
+          marginTop: isMobile ? 20 : 28,
         }}>
           {face?.animal_type && (
-            <div className="p-4 bg-white rounded-2xl border border-border-light">
-              <div className="flex items-center justify-between mb-2">
+            <div className="bg-white rounded-2xl border border-border-light"
+              style={{ padding: isMobile ? '20px 20px 24px' : '28px 28px 32px' }}>
+              <div className="flex items-center justify-between" style={{ marginBottom: isMobile ? 14 : 18 }}>
                 <div className="flex items-center gap-2">
-                  <PawPrint size={18} className="text-brand-amber" />
-                  <span className="font-bold text-ink" style={{ fontSize: isMobile ? 15 : 18 }}>동물상</span>
+                  <PawPrint size={isMobile ? 18 : 20} className="text-brand-amber" />
+                  <span className="font-bold text-ink" style={{ fontSize: isMobile ? 16 : 20 }}>동물상</span>
                 </div>
                 <span className="px-3 py-1 rounded-full font-bold"
                   style={{ backgroundColor: 'rgba(184,134,11,0.1)', color: '#B8860B', fontSize: isMobile ? 14 : 16 }}>{face.animal_type}</span>
               </div>
               {face.animal_description && (
-                <p className="text-ink-secondary leading-relaxed" style={{ fontSize: isMobile ? 14 : 16 }}>{face.animal_description}</p>
+                <p className="text-ink-secondary" style={{ fontSize: isMobile ? 15 : 17, lineHeight: 1.75 }}>{face.animal_description}</p>
               )}
             </div>
           )}
           {face?.personality_summary && (
-            <div className="p-4 bg-white rounded-2xl border border-border-light">
-              <div className="flex items-center gap-2 mb-2">
-                <Quote size={16} className="text-brand-amber" />
-                <span className="font-bold text-ink" style={{ fontSize: isMobile ? 15 : 18 }}>관상 총평</span>
+            <div className="bg-white rounded-2xl border border-border-light"
+              style={{ padding: isMobile ? '20px 20px 24px' : '28px 28px 32px' }}>
+              <div className="flex items-center gap-2" style={{ marginBottom: isMobile ? 14 : 18 }}>
+                <Quote size={isMobile ? 16 : 18} className="text-brand-amber" />
+                <span className="font-bold text-ink" style={{ fontSize: isMobile ? 16 : 20 }}>관상 총평</span>
               </div>
-              <p className="text-ink-secondary leading-relaxed" style={{ fontSize: isMobile ? 14 : 16 }}>{face.personality_summary}</p>
+              <p className="text-ink-secondary" style={{ fontSize: isMobile ? 15 : 17, lineHeight: 1.75 }}>{face.personality_summary}</p>
             </div>
           )}
         </div>
@@ -517,22 +519,19 @@ export default function ResultPage() {
                   )}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     {jobs.slice(1, 3).map((job, i) => (
-                      <div key={job.rank} className="relative rounded-2xl overflow-hidden"
-                        style={{ height: 220, border: '1px solid rgba(0,0,0,0.08)' }}>
-                        <div className="w-full h-full flex flex-col items-center justify-center"
-                          style={{ backgroundColor: '#1E1C1A' }}>
-                          <span style={{
-                            fontSize: 52, lineHeight: 1,
-                            color: 'rgba(255,255,255,0.12)',
-                            fontWeight: 800, letterSpacing: '-2px',
-                          }}>?</span>
-                          <span style={{
-                            fontSize: 72, lineHeight: 1,
-                            color: 'rgba(255,255,255,0.07)',
-                            fontWeight: 900, letterSpacing: '-3px',
-                            marginTop: -8,
-                          }}>{MEDAL[i + 1].label}</span>
-                        </div>
+                      <div key={job.rank} className="rounded-2xl flex flex-col items-center justify-center"
+                        style={{ height: 220, backgroundColor: '#111' }}>
+                        <span style={{
+                          fontSize: 36, lineHeight: 1,
+                          color: 'rgba(255,255,255,0.25)',
+                          fontWeight: 600,
+                        }}>?</span>
+                        <span style={{
+                          fontSize: 48, lineHeight: 1,
+                          color: 'rgba(255,255,255,0.4)',
+                          fontWeight: 800,
+                          marginTop: 6,
+                        }}>{MEDAL[i + 1].label}</span>
                       </div>
                     ))}
                   </div>
@@ -544,30 +543,27 @@ export default function ResultPage() {
                   )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14, height: '100%' }}>
                     {jobs.slice(1, 3).map((job, i) => (
-                      <div key={job.rank} className="relative rounded-2xl overflow-hidden"
-                        style={{ height: 253, border: '1px solid rgba(0,0,0,0.08)' }}>
-                        <div className="w-full h-full flex flex-col items-center justify-center"
-                          style={{ backgroundColor: '#1E1C1A' }}>
-                          <span style={{
-                            fontSize: 64, lineHeight: 1,
-                            color: 'rgba(255,255,255,0.12)',
-                            fontWeight: 800, letterSpacing: '-2px',
-                          }}>?</span>
-                          <span style={{
-                            fontSize: 96, lineHeight: 1,
-                            color: 'rgba(255,255,255,0.07)',
-                            fontWeight: 900, letterSpacing: '-4px',
-                            marginTop: -10,
-                          }}>{MEDAL[i + 1].label}</span>
-                        </div>
+                      <div key={job.rank} className="rounded-2xl flex flex-col items-center justify-center"
+                        style={{ height: 253, backgroundColor: '#111' }}>
+                        <span style={{
+                          fontSize: 44, lineHeight: 1,
+                          color: 'rgba(255,255,255,0.25)',
+                          fontWeight: 600,
+                        }}>?</span>
+                        <span style={{
+                          fontSize: 56, lineHeight: 1,
+                          color: 'rgba(255,255,255,0.4)',
+                          fontWeight: 800,
+                          marginTop: 8,
+                        }}>{MEDAL[i + 1].label}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
               {/* Upsell banner */}
-              <div className="mt-4 rounded-2xl overflow-hidden"
-                style={{ border: '1px solid rgba(0,0,0,0.1)' }}>
+              <div className="rounded-2xl overflow-hidden"
+                style={{ border: '1px solid rgba(0,0,0,0.1)', marginTop: isMobile ? 24 : 32 }}>
                 <div style={{ backgroundColor: '#fff', padding: isMobile ? '16px 18px 12px' : '20px 24px 14px' }}>
                   <p style={{
                     fontSize: isMobile ? 11 : 12,
@@ -591,30 +587,21 @@ export default function ResultPage() {
                   </p>
                 </div>
                 <div style={{
-                  backgroundColor: '#F7F6F4',
-                  padding: isMobile ? '12px 18px' : '14px 24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 12,
+                  padding: isMobile ? '14px 18px 18px' : '16px 24px 22px',
                 }}>
-                  <p style={{ fontSize: isMobile ? 11 : 12, color: 'rgba(0,0,0,0.4)' }}>
-                    전체 분석 결과 잠금 해제
-                  </p>
                   <button
                     onClick={() => { navigate('/mbti') }}
-                    className="flex-shrink-0 font-bold active:scale-95 transition-transform"
+                    className="w-full font-bold active:scale-[0.98] transition-transform"
                     style={{
                       backgroundColor: '#111',
                       color: '#fff',
-                      fontSize: isMobile ? 13 : 14,
-                      padding: isMobile ? '10px 20px' : '11px 24px',
-                      borderRadius: 10,
+                      fontSize: isMobile ? 15 : 16,
+                      padding: isMobile ? '14px 0' : '16px 0',
+                      borderRadius: 12,
                       letterSpacing: '-0.01em',
-                      whiteSpace: 'nowrap',
                     }}
                   >
-                    잠금 해제하기 →
+                    고급 분석 →
                   </button>
                 </div>
               </div>

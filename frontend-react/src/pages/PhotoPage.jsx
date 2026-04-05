@@ -1,8 +1,18 @@
-import { useState, useEffect, useId } from 'react'
+import { useState, useEffect, useId, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ArrowRight, Image as ImageIcon, CheckCircle, Lightbulb } from 'lucide-react'
 
-// objectUrl 또는 dataUrl을 받아 리사이즈
+// File → dataUrl (모바일 카메라 호환: createObjectURL 대신 FileReader 사용)
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(new Error('파일 읽기 실패'))
+    reader.readAsDataURL(file)
+  })
+}
+
+// dataUrl을 받아 리사이즈
 function resizeImage(src, maxWidth = 600) {
   return new Promise((resolve, reject) => {
     const img = new window.Image()
@@ -34,12 +44,27 @@ export default function PhotoPage() {
   })
   const [loading, setLoading] = useState(false)
   const galleryId = useId()
+  const fileInputRef = useRef(null)
 
   // 모바일: 카메라 열면 페이지가 리로드 → /photo로 복귀하도록
   useEffect(() => {
     localStorage.setItem('returnTo', '/photo')
     return () => {}
   }, [])
+
+  // 모바일 카메라 복귀 시 file input 변경 감지 (일부 브라우저에서 onChange 누락 대응)
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible' && fileInputRef.current) {
+        const files = fileInputRef.current.files
+        if (files && files.length > 0 && !photoPreview && !loading) {
+          handleFileSelect({ target: fileInputRef.current })
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [photoPreview, loading])
 
   async function handleFileSelect(e) {
     const file = e.target.files?.[0]
@@ -60,32 +85,21 @@ export default function PhotoPage() {
           setTimeout(() => reject(new Error('HEIC 변환 시간 초과')), 15000)
         )
         const blob = await Promise.race([convertPromise, timeoutPromise])
-        const objectUrl = URL.createObjectURL(blob)
-        try {
-          dataUrl = await resizeImage(objectUrl)
-        } finally {
-          URL.revokeObjectURL(objectUrl)
-        }
+        // HEIC 변환 결과는 blob → FileReader로 읽기
+        const heicDataUrl = await fileToDataUrl(blob)
+        dataUrl = await resizeImage(heicDataUrl)
       } else {
-        // 일반 이미지: ObjectURL로 메모리 복사 없이 처리
-        const objectUrl = URL.createObjectURL(file)
-        try {
-          dataUrl = await resizeImage(objectUrl)
-        } finally {
-          URL.revokeObjectURL(objectUrl)
-        }
+        // 일반 이미지: FileReader로 안정적으로 읽기 (모바일 카메라 호환)
+        const rawDataUrl = await fileToDataUrl(file)
+        dataUrl = await resizeImage(rawDataUrl)
       }
 
       try {
         localStorage.setItem('photoDataUrl', dataUrl)
       } catch {
         // localStorage 용량 초과 시 더 작게 리사이즈
-        const objectUrl = URL.createObjectURL(file)
-        try {
-          dataUrl = await resizeImage(objectUrl, 300)
-        } finally {
-          URL.revokeObjectURL(objectUrl)
-        }
+        const rawDataUrl = await fileToDataUrl(file)
+        dataUrl = await resizeImage(rawDataUrl, 300)
         localStorage.setItem('photoDataUrl', dataUrl)
       }
       setPhotoPreview(dataUrl)
@@ -94,7 +108,7 @@ export default function PhotoPage() {
       alert('사진을 불러올 수 없습니다.\n갤러리에서 사진을 선택해주세요.')
     } finally {
       setLoading(false)
-      e.target.value = ''
+      if (e.target) e.target.value = ''
     }
   }
 
@@ -185,6 +199,7 @@ export default function PhotoPage() {
                 <p className="text-sm text-ink-tertiary mt-1">갤러리에서 선택</p>
               </div>
               <input
+                ref={fileInputRef}
                 id={galleryId}
                 type="file"
                 accept="image/*"
